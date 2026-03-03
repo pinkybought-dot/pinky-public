@@ -322,7 +322,7 @@ Pinky gets a public presence. World domination begins publicly.
 
 When Ian comes to you (Claude) with Pinky problems:
 
-1. **Always suggest `openclaw health check`** — not `openclaw gateway status`. The former checks Telegram connectivity (true gateway health). The latter can show "pairing required" even when everything is fine.
+1. **ALWAYS use `openclaw health check`** — NEVER `openclaw gateway status`. The status command LIES — it shows "pairing required" even when the gateway is perfectly healthy. `health check` is the only truth. If it returns `Telegram: ok`, everything is fine. Do NOT restart, do NOT touch openclaw.json, do NOT panic.
 
 2. **Never suggest `openclaw config set gateway.auth.mode off`** — this value is invalid and gets rejected. Gateway auth mode is `token`. Don't mess with it.
 
