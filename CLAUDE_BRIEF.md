@@ -77,12 +77,6 @@ Everything else: I decide, do, and report in the 8am/8pm update.
 - **Exchange:** Kraken (real money — $4K vault)
 - **IMPORTANT:** The REAL trading bot is `aggressive_bouncer_bot.py` (called via `run_bouncer.sh`). FreqTrade has been running but zero live trades — its strategy conditions haven't triggered. The custom bot executed real trades including one at +2.06% P&L on March 2.
 
-### Ollama (Local AI — Free)
-- **Model:** llama3.2:3b (2GB, Apple Silicon optimized)
-- **API:** http://127.0.0.1:11434
-- **Service:** brew services (auto-starts on boot)
-- **Used for:** Pinky Guardian (intelligent monitoring + diagnosis), zero API cost
-
 ### Python Environment (CRITICAL — this caused a major outage)
 - **TWO Pythons on this Mac:**
   - `/usr/bin/python3` → Python 3.9.6 (Apple system, NO packages like ccxt)
@@ -121,7 +115,6 @@ memory/2026-MM-DD.md — Daily logs
 ```
 /Users/Bozzy1/.openclaw/workspace/
 ├── scripts/
-│   ├── pinky-guardian.sh      — Ollama-powered health monitor (every 5 min)
 │   └── pinky-healthcheck.sh   — Deep env diagnostic (every 10 min)
 ├── pinkybot/
 │   ├── aggressive_bouncer_bot.py    — REAL trading bot (direct Kraken API)
@@ -140,8 +133,7 @@ memory/2026-MM-DD.md — Daily logs
 
 | Schedule | Script | Purpose |
 |----------|--------|---------|
-| Every 5 min | pinky-guardian.sh | Ollama monitors Ollama→Gateway→PinkyBot, auto-restarts |
-| Every 10 min | pinky-healthcheck.sh | Deep checks: gateway health, Python, token match, cron integrity, mail |
+| Every 5 min | pinky-guardian.sh | Every 10 min | pinky-healthcheck.sh | Deep checks: gateway health, Python, token match, cron integrity, mail |
 | Every 10 min | monitor_wrapper.sh | PinkyBot status monitor (writes to /tmp JSON, no API cost) |
 | Every 10 min | health_monitor.py | Position health check (uses /opt/homebrew/bin/python3) |
 | Every 10 min | run_bouncer.sh | Runs the REAL crypto trading bot |
@@ -190,7 +182,6 @@ Full credentials in THANOS.md. Summary:
 | OpenAI | GPT-4, DALL-E, embeddings | Key in THANOS.md |
 | Telegram | Send to any of Ian's groups | Built into OpenClaw |
 | CarGurus/Craigslist | Post RAV4 listings | pinkybought@gmail.com |
-| Ollama | Local AI (llama3.2:3b) | http://127.0.0.1:11434 |
 
 ### Telegram Groups:
 - **Main:** "Try and Take Over the World" → `-1003572083188` (THIS is the main chat)
@@ -267,7 +258,6 @@ openclaw config set <path> <val> # The ONLY safe way to edit config
 | Auto-loaded context | 6,356 tokens/msg | Baseline per message |
 | Memory search (OpenAI) | text-embedding-3-small | ~$0.02/1M tokens (negligible) |
 | System cron scripts | bash / local python | Free |
-| Pinky Guardian (Ollama) | llama3.2:3b local | Free |
 | Target ongoing cost | — | $30-60/month |
 | Setup sprint spent | — | ~$198 |
 
@@ -285,7 +275,6 @@ Get Pinky autonomous AF. Infrastructure, self-healing, full credential access.
 - ✅ Gmail + Mercury 2FA owned by Pinky
 - ✅ 8am/8pm DOM briefings
 - ✅ Memory search (OpenAI embeddings)
-- ✅ Ollama guardian (free local monitoring)
 - ⏳ Tailscale + Gmail PubSub (real-time email vs polling)
 - ⏳ Fix subagent spawning
 
