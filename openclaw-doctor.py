@@ -62,6 +62,8 @@ ALERT_PHONE        = os.environ.get("ALERT_PHONE", "")
 # Tuning
 CHECK_INTERVAL         = 300   # seconds between health checks (5 min)
 AI_DIAGNOSIS_THRESHOLD = 2     # failures before calling Claude
+GATEWAY_LOCK           = "/tmp/gateway-restart.lock"
+GATEWAY_LOCK_TTL       = 120   # seconds before stale lock is cleared
 
 # !! CUSTOMIZE THIS !! Run `crontab -l` and list the script names you expect.
 # Leave empty [] to skip cron monitoring.
@@ -403,6 +405,29 @@ def write_forensics_report(situation, diagnosis, history, status, patch):
     log.info(f"📋 Forensics report saved to {CRASH_LOG}")
 
 # ============================================================
+# GATEWAY RESTART LOCKFILE
+# Prevents multiple monitors (guardian/healthcheck/doctor) piling
+# on simultaneously when the gateway is briefly down.
+# Proven fix: eliminated 120+ false SIGTERMs/day (March 3, 2026).
+# ============================================================
+def acquire_restart_lock():
+    """Returns True if we got the lock, False if another script holds it."""
+    lock = Path(GATEWAY_LOCK)
+    if lock.exists():
+        age = time.time() - lock.stat().st_mtime
+        if age < GATEWAY_LOCK_TTL:
+            log.info(f"⏳ Gateway restart locked by another script ({int(age)}s ago) — skipping")
+            return False
+        else:
+            log.info(f"🔓 Stale lock ({int(age)}s) — clearing")
+            lock.unlink(missing_ok=True)
+    lock.touch()
+    return True
+
+def release_restart_lock():
+    Path(GATEWAY_LOCK).unlink(missing_ok=True)
+
+# ============================================================
 # HEALTH CHECKS
 # ============================================================
 def check_gateway(state):
@@ -414,10 +439,17 @@ def check_gateway(state):
         return clear_failure(state, "gateway")
 
     log.warning("❌ Gateway: DOWN — attempting safe restart")
+
+    # Lockfile: only one monitor restarts at a time (prevents pile-on SIGTERMs)
+    if not acquire_restart_lock():
+        log.info("⏭️ Skipping restart — another script has the lock")
+        return state
+
     run(f"{OPENCLAW_BIN} gateway restart", timeout=20)
     time.sleep(10)
     ok2, out2, _ = run(f"{OPENCLAW_BIN} health check", timeout=15)
     if "Telegram: ok" in out2:
+        release_restart_lock()
         log.info("⚡ Gateway: Restarted successfully")
         send_telegram(f"⚡ {AGENT_NAME} Doctor auto-fixed: gateway restarted.")
         return clear_failure(state, "gateway")
@@ -429,6 +461,7 @@ def check_gateway(state):
     run(f"{OPENCLAW_BIN} gateway restart", timeout=20)
     time.sleep(10)
     ok3, out3, _ = run(f"{OPENCLAW_BIN} health check", timeout=15)
+    release_restart_lock()
     if "Telegram: ok" in out3:
         log.info("⚡ Gateway: Recovered after reinstall")
         send_telegram(f"⚡ {AGENT_NAME} Doctor: gateway recovered after reinstall.")
