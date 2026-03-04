@@ -67,17 +67,18 @@ Everything else: I decide, do, and report in the 8am/8pm update.
 - **Default model:** anthropic/claude-haiku-4-5 (set globally to save cost)
 - **Active session model:** anthropic/claude-sonnet-4-6 (this session, started before model switch)
 
-### PinkyBot (Crypto Trading) — **PARKED INDEFINITELY as of March 3, 2026**
-- **Status:** NOT RUNNING — all LaunchAgents removed, cron job removed
-- **Capital:** $4,000 safe on Kraken (not being traded)
-- **Reason for parking:** Strategy was waiting for entry signals that weren't materializing in the current consolidation. Time-to-first-trade was uncertain. Safer to park than risk management debt.
-- **Revival:** If/when Ian wants to restart: code is intact, capital is intact, just needs LaunchAgent reload
-- **Architecture (for reference):**
-  - Framework: Custom Python (direct Kraken API, not FreqTrade)
-  - Strategy: AggressiveBouncerStrategy (EMA50 bounce entries)
-  - Last implementation: Continuous daemon (checked every 2 min) with lockfile to prevent doubles
-  - Exchange: Kraken API
-  - Position size: $1,000/trade, max 3 trades (-3% stoploss, +5% ROI targets)
+### PinkyBot (Crypto Trading) — **COMPLETELY PARKED as of March 3, 2026**
+- **Status:** 🛑 NOT RUNNING — ALL monitoring removed, NO check-ins, RADIO SILENCE
+- **Capital:** 0.058166 BTC (~$3,966) safe on Kraken — hands-off 2+ year hold
+- **Reason for parking:** Focus shifted to higher-engagement projects. Crypto on auto-pilot.
+- **Revival:** Possible if interest returns. Code intact, capital intact, dormant.
+- **Do NOT:**
+  - Check bot status
+  - Monitor positions
+  - Send reports
+  - Run trades
+  - Think about it
+- **Do IF Ian asks:** Reload LaunchAgents, restart crons, resume operations
 
 ### Python Environment (CRITICAL — this caused a major outage)
 - **TWO Pythons on this Mac:**
@@ -136,9 +137,7 @@ memory/2026-MM-DD.md — Daily logs
 | Schedule | Script | Purpose |
 |----------|--------|---------|
 | Every 5 min | pinky-guardian.sh | Every 10 min | pinky-healthcheck.sh | Deep checks: gateway health, Python, token match, cron integrity, mail |
-| Every 10 min | monitor_wrapper.sh | (was PinkyBot monitor — REMOVED, bot parked) |
-| Every 10 min | health_monitor.py | (was position monitor — REMOVED, bot parked) |
-| — | run_bouncer.sh | (REMOVED from cron — bot parked indefinitely) |
+| — | (PinkyBot crons) | ALL REMOVED — crypto project fully paused |
 | 8:00 AM daily | daily_macro_analysis.sh | Sends Telegram trigger for market analysis |
 | 8:00 PM daily | run_evening_check.sh | Sends evening PinkyBot status to Telegram |
 
