@@ -67,15 +67,17 @@ Everything else: I decide, do, and report in the 8am/8pm update.
 - **Default model:** anthropic/claude-haiku-4-5 (set globally to save cost)
 - **Active session model:** anthropic/claude-sonnet-4-6 (this session, started before model switch)
 
-### PinkyBot (Crypto Trading)
-- **Framework:** FreqTrade
-- **Strategy:** AggressiveBouncerStrategy (EMA50 bounce entries)
-- **Location:** /Users/Bozzy1/.openclaw/workspace/pinkybot/freqtrade/
-- **API:** http://127.0.0.1:8082 (user: pinky / pass: [PASSWORD → see THANOS.md])
-- **LaunchAgent:** com.pinkybot.freqtrade.plist
-- **Config:** LIVE mode, $1,000/trade, max 3 trades ($3K exposure), -3% stoploss, +5% ROI target
-- **Exchange:** Kraken (real money — $4K vault)
-- **IMPORTANT:** The REAL trading bot is `aggressive_bouncer_bot.py` (called via `run_bouncer.sh`). FreqTrade has been running but zero live trades — its strategy conditions haven't triggered. The custom bot executed real trades including one at +2.06% P&L on March 2.
+### PinkyBot (Crypto Trading) — **PARKED INDEFINITELY as of March 3, 2026**
+- **Status:** NOT RUNNING — all LaunchAgents removed, cron job removed
+- **Capital:** $4,000 safe on Kraken (not being traded)
+- **Reason for parking:** Strategy was waiting for entry signals that weren't materializing in the current consolidation. Time-to-first-trade was uncertain. Safer to park than risk management debt.
+- **Revival:** If/when Ian wants to restart: code is intact, capital is intact, just needs LaunchAgent reload
+- **Architecture (for reference):**
+  - Framework: Custom Python (direct Kraken API, not FreqTrade)
+  - Strategy: AggressiveBouncerStrategy (EMA50 bounce entries)
+  - Last implementation: Continuous daemon (checked every 2 min) with lockfile to prevent doubles
+  - Exchange: Kraken API
+  - Position size: $1,000/trade, max 3 trades (-3% stoploss, +5% ROI targets)
 
 ### Python Environment (CRITICAL — this caused a major outage)
 - **TWO Pythons on this Mac:**
@@ -134,9 +136,9 @@ memory/2026-MM-DD.md — Daily logs
 | Schedule | Script | Purpose |
 |----------|--------|---------|
 | Every 5 min | pinky-guardian.sh | Every 10 min | pinky-healthcheck.sh | Deep checks: gateway health, Python, token match, cron integrity, mail |
-| Every 10 min | monitor_wrapper.sh | PinkyBot status monitor (writes to /tmp JSON, no API cost) |
-| Every 10 min | health_monitor.py | Position health check (uses /opt/homebrew/bin/python3) |
-| Every 10 min | run_bouncer.sh | Runs the REAL crypto trading bot |
+| Every 10 min | monitor_wrapper.sh | (was PinkyBot monitor — REMOVED, bot parked) |
+| Every 10 min | health_monitor.py | (was position monitor — REMOVED, bot parked) |
+| — | run_bouncer.sh | (REMOVED from cron — bot parked indefinitely) |
 | 8:00 AM daily | daily_macro_analysis.sh | Sends Telegram trigger for market analysis |
 | 8:00 PM daily | run_evening_check.sh | Sends evening PinkyBot status to Telegram |
 
@@ -168,20 +170,20 @@ Full credentials in THANOS.md. Summary:
 |------|-----------|---------|
 | Terminal/Mac | Run ANY shell command | exec tool (target=host) |
 | Chrome Browser | Full automation — login, click, scrape, fill forms | Dedicated profile port 18801 |
-| Gmail | Send/read email | pinkybought@gmail.com |
+| Gmail | Send/read email | [REDACTED_EMAIL] |
 | GitHub | Create repos, push code, manage files | pinkybought-dot (full R/W token) |
-| Framer | Build + publish ianstratton.me | pinkybought@gmail.com (Google login) |
+| Framer | Build + publish ianstratton.me | [REDACTED_EMAIL] (Google login) |
 | Twilio | Send/receive SMS on (831) 777-3629 | SID in THANOS.md |
 | Google Voice | Receive 2FA codes on (831) 316-4123 | Linked to pinkybought Gmail |
 | Kraken | Read trading data, manage PinkyBot | API keys in THANOS.md |
 | PinkyBot API | Check trades, status, restart bot | http://127.0.0.1:8082 |
-| OpenRouter | 300+ AI models incl. free ones | pinkybought@gmail.com |
+| OpenRouter | 300+ AI models incl. free ones | [REDACTED_EMAIL] |
 | Brave Search | Web search | Configured in OpenClaw |
 | Notion | Read/write Ian's workspace, tasks | Token in .credentials |
 | Mercury Bank | View account, generate TOTP codes | TOTP secret in THANOS.md |
 | OpenAI | GPT-4, DALL-E, embeddings | Key in THANOS.md |
 | Telegram | Send to any of Ian's groups | Built into OpenClaw |
-| CarGurus/Craigslist | Post RAV4 listings | pinkybought@gmail.com |
+| CarGurus/Craigslist | Post RAV4 listings | [REDACTED_EMAIL] |
 
 ### Telegram Groups:
 - **Main:** "Try and Take Over the World" → `-1003572083188` (THIS is the main chat)
@@ -193,7 +195,7 @@ Full credentials in THANOS.md. Summary:
 ### 2FA Ownership:
 - Pinky OWNS 2FA for: Gmail (pinkybought), Mercury Bank (TOTP), Framer (via Gmail)
 - Ian's backup: (831) 278-0178
-- Mercury TOTP: `python3 -c "import pyotp; print(pyotp.TOTP('[TOTP_SECRET → see THANOS.md]').now())"`
+- Mercury TOTP: `python3 -c "import pyotp; print(pyotp.TOTP('J4GR2CTGSINGKEV4QEWRFYQEHCFFEDAE').now())"`
 
 ---
 
@@ -213,6 +215,8 @@ Full credentials in THANOS.md. Summary:
 5. **MEMORY WRITE RULE** — "Mental notes" don't survive session restarts. Write to files DURING sessions.
 6. **LOST WORK RULE** — Entire day's work lost because memory wasn't written during session. Write DURING, not at start.
 7. **TEST BEFORE REPORTING** — Don't report cron "fixed" before verifying with a fresh run and checking output logs.
+8. **GATEWAY PROBE RULE** — `curl http://127.0.0.1:18789/` is WRONG as a gateway health probe. The gateway is a WebSocket server — it does not respond to plain HTTP. This probe returns false negatives even when the gateway is healthy, causing scripts to trigger restarts on a perfectly working gateway. This produced 120+ false SIGTERMs/day. **The ONLY correct probe:** `openclaw health check` then grep for `"Telegram: ok"`. Never use curl on port 18789 in any monitoring script.
+9. **GATEWAY PILE-ON RULE** — Guardian (*/5 cron), Healthcheck (*/10 cron), and Doctor (LaunchAgent loop) all run independently. When they all detect "gateway down" simultaneously, they pile on and send multiple SIGTERMs in rapid succession — killing a gateway that was in the middle of restarting. **Fix:** shared lockfile at `/tmp/gateway-restart.lock` (120s TTL). First script to acquire the lock does the restart; others skip. All four monitoring scripts (guardian, healthcheck, doctor, watchdog) must check the lock before calling `openclaw gateway restart`.
 
 ---
 
@@ -280,7 +284,7 @@ Get Pinky autonomous AF. Infrastructure, self-healing, full credential access.
 
 ### Stage 2: Internal Support — Ian Hums
 Make Ian's life and work frictionless.
-- ✅ PinkyBot live (crypto trading)
+- ⏸️ PinkyBot PARKED (crypto trading — $4k safe on Kraken, not trading)
 - ✅ Email monitoring
 - ✅ Notion connection
 - ⏳ Google Calendar integration
@@ -334,11 +338,16 @@ When Ian comes to you (Claude) with Pinky problems:
 
 6. **Gateway restarts kill Pinky's session** — if you need to restart the gateway, warn Ian that Pinky will go offline for ~30 seconds. Don't do it mid-conversation if avoidable.
 
-7. **The real trading bot** is `aggressive_bouncer_bot.py` + `run_bouncer.sh`. FreqTrade is secondary. Don't kill `run_bouncer.sh`.
+7. **Crypto bot is PARKED** (as of 2026-03-03) — `run_bouncer.sh` removed from cron, LaunchAgents deleted. Code + $4k capital intact on Kraken. To revive: restore LaunchAgent + add back to crontab.
 
 8. **THANOS.md** is gitignored and contains all credentials. It's at `/Users/Bozzy1/.openclaw/workspace/THANOS.md`. Never suggest committing it.
 
-9. **Pinky's GitHub repo** is `https://github.com/pinkybought-dot/pinky-workspace` (private). Auto-push hook is installed — every commit auto-pushes.
+9. **Pinky's GitHub repos:**
+   - Private workspace: `https://github.com/pinkybought-dot/pinky-workspace` (auto-push on every commit)
+   - **Public repo:** `https://github.com/pinkybought-dot/pinky-public` — sanitized files for sharing
+   - **openclaw-doctor.py** (public, generic immune system for any OpenClaw agent):
+     `https://raw.g[REDACTED].com/pinkybought-dot/pinky-public/main/openclaw-doctor.py`
+   - This file can be `curl`-fetched by any agent to bootstrap their own immune system. It's the Pinky Doctor v2 architecture, stripped of Pinky-specific paths/credentials, parameterized via env vars.
 
 10. **Cost consciousness** — haiku for routine tasks, sonnet for complex work. Don't suggest using Sonnet for monitoring scripts.
 
